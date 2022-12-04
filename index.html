@@ -4,16 +4,183 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Check My Weather</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      header {
+        text-align: center;
+        background-color: blueviolet;
+        height: 10vh;
+      }
+
+      .parent_section {
+        display: flex;
+        background-color: brown;
+        padding: 5px;
+        height: 90vh;
+      }
+
+      .search_section {
+        display: flex;
+        width: 35%;
+        margin-right: 5px;
+      }
+
+      .weather_section {
+        width: 65%;
+      }
+
+      .search_section,
+      .weather_section {
+        height: 100%;
+        background-color: white;
+      }
+
+      .country_section {
+        display: grid;
+        height: auto;
+        grid-template-rows: 5% 5% auto;
+      }
+
+      .searchCountries {
+        width: 250px;
+        height: 30px;
+        border: 1px solid black;
+        border-radius: 3px;
+        outline: none;
+      }
+
+      .showCountryList {
+        height: 300px;
+        overflow-y: auto;
+        width: 250px;
+        border-radius: 3px;
+        background-color: aqua;
+        transition: height 0.5s;
+      }
+
+      .countryLI {
+        border-bottom: 1px solid black;
+        padding: 5px 10px;
+      }
+
+      .countryLI:hover {
+        background-color: rgba(27, 27, 27, 0.7);
+      }
+
+      .hideCountryList {
+        height: 0px;
+        transition: height 0.5s;
+      }
+
+      .hideCountryList,
+      .hideLI {
+        display: none;
+      }
+    </style>
   </head>
   <body>
-    <h1>Weather App</h1>
+    <header>
+      <h1>Check My Weather</h1>
+    </header>
+    <section class="parent_section">
+      <section class="search_section">
+        <section class="country_section">
+          <label>Select Country</label>
+          <input
+            type="text"
+            placeholder="Select country"
+            class="searchCountries"
+          />
+          <div id="countryList" class="hideCountryList"></div>
+        </section>
+        <section>
+          <label>Select City</label>
+          <input
+            type="text"
+            placeholder="Select city"
+            class="searchCountries"
+          />
+          <div id="cityList" class="hideCountryList"></div>
+        </section>
+      </section>
+      <section class="weather_section">Weather</section>
+    </section>
   </body>
 
   <script>
-    const weatherAPI = `https://api.weatherstack.com/current?access_key=YOUR_ACCESS_KEY&query=New York`;
-    const weatherAPI_key = "b51ed73230cd6ab71fb0d6128a60695c";
-    const countriesAPI = "https://restcountries.com/v3.1/all";
-    const citiesName = "https://countriesnow.space/api/v0.1/countries/cities";
+    // const weatherAPI = `https://api.weatherstack.com/current?access_key=YOUR_ACCESS_KEY&query=New York`;
+    // const weatherAPI_key = "b51ed73230cd6ab71fb0d6128a60695c";
+    // let countriesAPI = "https://restcountries.com/v3.1/all";
+    // const citiesName = "https://countriesnow.space/api/v0.1/countries/cities";
+    const countryTextbox = document.querySelector(".searchCountries");
+    const countryUL = document.querySelector("#countryList");
+    const countriesName = document.querySelectorAll(".countryLI");
+    const cityUL = document.querySelector("#cityList");
+    let countriesList;
+
+    const countriesFetch = async () => {
+      const resp = await fetch("https://restcountries.com/v3.1/all");
+      const data = await resp.json();
+      countriesList = data.map((el) => el.name.common);
+
+      countriesList.forEach((country) => {
+        const paragraph = `<p class='countryLI'>${country}</p>`;
+        countryUL.insertAdjacentHTML("afterbegin", paragraph);
+      });
+    };
+
+    countriesFetch();
+
+    countryTextbox.addEventListener("focus", () => {
+      countryUL.className = "showCountryList";
+      countriesName.forEach((el) => {
+        el.classList.remove("hideLI");
+      });
+    });
+
+    countryUL.addEventListener("click", async (event) => {
+      const resp = await fetch(
+        `https://countriesnow.space/api/v0.1/countries/cities`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: event.target.innerHTML })
+        }
+      );
+      const { data } = await resp.json();
+      data.forEach((city) => {
+        cityUL.insertAdjacentHTML(
+          "afterbegin",
+          `<p class='countryLI'>${city}</p>`
+        );
+      });
+    });
+
+    countryUL.addEventListener("mouseleave", () => {
+      countryUL.className = "hideCountryList";
+      countriesName.forEach((el) => (el.className = "hideLI"));
+    });
+
+    countryTextbox.addEventListener("keyup", (event) => {
+      while (countryUL.firstChild) {
+        countryUL.removeChild(countryUL.firstChild);
+      }
+
+      countriesList.forEach((country) => {
+        if (country.toLowerCase().includes(event.target.value.toLowerCase())) {
+          countryUL.insertAdjacentHTML(
+            "afterbegin",
+            `<p class='countryLI'>${country}</p>`
+          );
+        }
+      });
+    });
   </script>
 </html>
