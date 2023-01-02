@@ -3,6 +3,7 @@
 // const weatherAPI_key = "b51ed73230cd6ab71fb0d6128a60695c";
 // let countriesAPI = "https://restcountries.com/v3.1/all";
 // const citiesName = "https://countriesnow.space/api/v0.1/countries/cities";
+const body = document.querySelector("body");
 const countryTextbox = document.querySelector(".searchCountries");
 const countryDropDown = document.querySelector("#countryDropDown");
 const countriesName = document.querySelectorAll(".countryLI");
@@ -31,14 +32,23 @@ const fetchCountries = async () => {
 
 fetchCountries();
 
-countryTextbox.addEventListener("click", () => {
+body.addEventListener("click", () => {
+  countryDropDown.className = "hideCountryList";
+  countriesName.forEach((el) => (el.className = "hideLI"));
+  cityDropDown.className = "hideCityList";
+  citiesName.forEach((el) => (el.classname = "hideLI"));
+});
+
+countryTextbox.addEventListener("click", (event) => {
+  event.stopPropagation();
   countryDropDown.className = "showCountryDropDown";
   countriesName.forEach((el) => {
     el.classList.remove("hideLI");
   });
 });
 
-cityTextbox.addEventListener("click", () => {
+cityTextbox.addEventListener("click", (event) => {
+  event.stopPropagation();
   cityDropDown.className = "showCountryDropDown";
   citiesName.forEach((el) => {
     el.classList.remove("hideLI");
@@ -46,6 +56,7 @@ cityTextbox.addEventListener("click", () => {
 });
 
 countryDropDown.addEventListener("click", async (event) => {
+  event.stopPropagation();
   countryName = event.target.innerHTML;
   countryTextbox.value = countryName;
 
@@ -68,16 +79,21 @@ countryDropDown.addEventListener("click", async (event) => {
       body: JSON.stringify({ country: countryName })
     }
   );
-  const { data } = await resp.json();
-  cityList = data;
 
-  if (!data) {
+  if (resp.status >= 400 && resp.status <= 599) {
+    while (cityDropDown.firstChild) {
+      cityDropDown.removeChild(cityDropDown.firstChild);
+    }
+
     cityDropDown.insertAdjacentHTML(
       "afterbegin",
       `<p class='cityLI'>No city is available!</p>`
     );
     return;
   }
+
+  const { data } = await resp.json();
+  cityList = data;
 
   data?.forEach((city) => {
     cityDropDown.insertAdjacentHTML(
@@ -88,13 +104,15 @@ countryDropDown.addEventListener("click", async (event) => {
 });
 
 cityDropDown.addEventListener("click", async (event) => {
+  event.stopPropagation();
   cityName = event.target.innerHTML;
   cityTextbox.value = cityName;
 
   if (
     !countryTextbox.value ||
     !cityTextbox.value ||
-    cityTextbox.value === "Please select country"
+    cityTextbox.value === "Please select country" ||
+    cityTextbox.value === "Loading..."
   )
     return;
 
@@ -103,7 +121,6 @@ cityDropDown.addEventListener("click", async (event) => {
   );
   const data = await resp.json();
   const { current } = data;
-  console.log(data);
 
   if (weatherImage?.lastElementChild?.tagName)
     weatherImage.removeChild(weatherImage.lastElementChild);
@@ -122,11 +139,20 @@ cityDropDown.addEventListener("click", async (event) => {
     .join("")
     .toLowerCase();
 
-  if (["overcast", "cloudy", "haze", "mist"].includes(weather)) {
+  if (["overcast", "cloudy"].includes(weather)) {
     weatherImage.insertAdjacentHTML(
       "afterbegin",
       `<img
             src="./images/Cloudy.gif"
+            class="weatherMainImg"
+            alt="weather image"
+          />`
+    );
+  } else if (["smoge", "haze", "mist", "smoke"].includes(weather)) {
+    weatherImage.insertAdjacentHTML(
+      "afterbegin",
+      `<img
+            src="./images/smoge.gif"
             class="weatherMainImg"
             alt="weather image"
           />`
@@ -179,7 +205,7 @@ cityDropDown.addEventListener("click", async (event) => {
 
   feelsLike.insertAdjacentHTML(
     "beforeend",
-    `<span>Wind Speed: ${current.wind_speed} km/h</span>`
+    `<span>Feels Like: ${current.feelslike} <sup>°C</sup></span>`
   );
 });
 
