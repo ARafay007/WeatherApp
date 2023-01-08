@@ -1,8 +1,9 @@
 "use strict";
-// const weatherAPI = `https://api.weatherstack.com/current?access_key=YOUR_ACCESS_KEY&query=New York`;
-// const weatherAPI_key = "b51ed73230cd6ab71fb0d6128a60695c";
-// let countriesAPI = "https://restcountries.com/v3.1/all";
-// const citiesName = "https://countriesnow.space/api/v0.1/countries/cities";
+// weatherAPI = `https://api.weatherstack.com/current?access_key=YOUR_ACCESS_KEY&query=New York`;
+// weatherAPI_key = "b51ed73230cd6ab71fb0d6128a60695c";
+// countries_API = "https://restcountries.com/v3.1/all";
+// citiesName_API = "https://countriesnow.space/api/v0.1/countries/cities";
+// reverseGeoCodeKey = plwPIIjrvMVbWGLM9rwRqK7YHoS5WvAt
 const body = document.querySelector("body");
 const countryTextbox = document.querySelector(".searchCountries");
 const countryDropDown = document.querySelector("#countryDropDown");
@@ -12,12 +13,28 @@ const cityDropDown = document.querySelector("#cityDropDown");
 const citiesName = document.querySelectorAll(".cityLI");
 const temperature = document.querySelector("#temperature");
 const weatherName = document.querySelector("#weatherName");
+const placeName = document.querySelector("#placeName");
 const weatherImage = document.querySelector(".weatherImgDiv");
 const weatherPropertiesImgs = document.querySelectorAll(".weatherPropertyImgs");
 const feelsLike = document.querySelector(".feelsLike");
 const humidity = document.querySelector(".humidity");
 const windSpeed = document.querySelector(".windSpeed");
 let countriesList, cityList, countryName, cityName;
+
+(function getUserLcocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      const resp = await fetch(
+        `https://api.tomtom.com/search/2/reverseGeocode/${coords.latitude},${coords.longitude}.json?key=plwPIIjrvMVbWGLM9rwRqK7YHoS5WvAt&radius=100`
+      );
+      const { addresses } = await resp.json();
+      const { municipalitySubdivision, municipality, country } =
+        addresses[0].address;
+
+      getWeather(country, municipalitySubdivision || municipality);
+    });
+  }
+})();
 
 const fetchCountries = async () => {
   const resp = await fetch("https://restcountries.com/v3.1/all");
@@ -113,12 +130,74 @@ cityDropDown.addEventListener("click", async (event) => {
     !cityTextbox.value ||
     cityTextbox.value === "Please select country" ||
     cityTextbox.value === "Loading..."
-  )
+  ) {
     return;
+  }
 
+  getWeather(countryName, cityName);
+});
+
+countryDropDown.addEventListener("mouseleave", () => {
+  countryDropDown.className = "hideCountryList";
+  countriesName.forEach((el) => (el.className = "hideLI"));
+});
+
+cityDropDown.addEventListener("mouseleave", () => {
+  cityDropDown.className = "hideCityList";
+  citiesName.forEach((el) => (el.classname = "hideLI"));
+});
+
+countryTextbox.addEventListener("keyup", (event) => {
+  while (countryDropDown.firstChild) {
+    countryDropDown.removeChild(countryDropDown.firstChild);
+  }
+
+  if (!countryTextbox.value) {
+    while (cityDropDown.firstChild) {
+      cityDropDown.removeChild(cityDropDown.firstChild);
+    }
+
+    cityDropDown.insertAdjacentHTML(
+      "afterbegin",
+      `<p class='cityLI'>Please select country</p>`
+    );
+  }
+
+  countriesList.forEach((country) => {
+    if (country.toLowerCase().includes(event.target.value.toLowerCase())) {
+      countryDropDown.insertAdjacentHTML(
+        "afterbegin",
+        `<p class='countryLI'>${country}</p>`
+      );
+    }
+  });
+});
+
+cityTextbox.addEventListener("keyup", (event) => {
+  while (cityDropDown.firstChild) {
+    cityDropDown.removeChild(cityDropDown.firstChild);
+  }
+
+  cityList?.forEach((city) => {
+    if (city.toLowerCase().includes(event.target.value.toLowerCase())) {
+      cityDropDown.insertAdjacentHTML(
+        "afterbegin",
+        `<p class='cityLI'>${city}</p>`
+      );
+    }
+  });
+});
+
+const getWeather = async (country, city) => {
   const resp = await fetch(
-    `http://api.weatherstack.com/current?access_key=b51ed73230cd6ab71fb0d6128a60695c&query=${cityName},${countryName}`
+    `http://api.weatherstack.com/current?access_key=b51ed73230cd6ab71fb0d6128a60695c&query=${city},${country}`
   );
+
+  if (resp.status >= 400 && resp.status <= 599) {
+    temperature.textContent = "No data available!";
+    return;
+  }
+
   const data = await resp.json();
   const { current } = data;
 
@@ -131,7 +210,7 @@ cityDropDown.addEventListener("click", async (event) => {
     }
   });
 
-  temperature.textContent = current.temperature;
+  temperature.innerHTML = `Temperature: ${current.temperature} <sup>°C</sup>`;
   weatherName.textContent = current.weather_descriptions[0];
 
   const weather = current.weather_descriptions[0]
@@ -193,6 +272,8 @@ cityDropDown.addEventListener("click", async (event) => {
     );
   }
 
+  placeName.textContent = `${country}, ${city}`;
+
   windSpeed.insertAdjacentHTML(
     "beforeend",
     `<span>Wind Speed: ${current.wind_speed} km/h</span>`
@@ -207,55 +288,4 @@ cityDropDown.addEventListener("click", async (event) => {
     "beforeend",
     `<span>Feels Like: ${current.feelslike} <sup>°C</sup></span>`
   );
-});
-
-countryDropDown.addEventListener("mouseleave", () => {
-  countryDropDown.className = "hideCountryList";
-  countriesName.forEach((el) => (el.className = "hideLI"));
-});
-
-cityDropDown.addEventListener("mouseleave", () => {
-  cityDropDown.className = "hideCityList";
-  citiesName.forEach((el) => (el.classname = "hideLI"));
-});
-
-countryTextbox.addEventListener("keyup", (event) => {
-  while (countryDropDown.firstChild) {
-    countryDropDown.removeChild(countryDropDown.firstChild);
-  }
-
-  if (!countryTextbox.value) {
-    while (cityDropDown.firstChild) {
-      cityDropDown.removeChild(cityDropDown.firstChild);
-    }
-
-    cityDropDown.insertAdjacentHTML(
-      "afterbegin",
-      `<p class='cityLI'>Please select country</p>`
-    );
-  }
-
-  countriesList.forEach((country) => {
-    if (country.toLowerCase().includes(event.target.value.toLowerCase())) {
-      countryDropDown.insertAdjacentHTML(
-        "afterbegin",
-        `<p class='countryLI'>${country}</p>`
-      );
-    }
-  });
-});
-
-cityTextbox.addEventListener("keyup", (event) => {
-  while (cityDropDown.firstChild) {
-    cityDropDown.removeChild(cityDropDown.firstChild);
-  }
-
-  cityList?.forEach((city) => {
-    if (city.toLowerCase().includes(event.target.value.toLowerCase())) {
-      cityDropDown.insertAdjacentHTML(
-        "afterbegin",
-        `<p class='cityLI'>${city}</p>`
-      );
-    }
-  });
-});
+};
