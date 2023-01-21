@@ -19,6 +19,8 @@ const weatherPropertiesImgs = document.querySelectorAll(".weatherPropertyImgs");
 const feelsLike = document.querySelector(".feelsLike");
 const humidity = document.querySelector(".humidity");
 const windSpeed = document.querySelector(".windSpeed");
+const loadingBackground = document.querySelector(".hideLoadingBackground");
+const loader = document.querySelector(".hideLoader");
 let countriesList, cityList, countryName, cityName;
 
 (function getUserLcocation() {
@@ -189,9 +191,15 @@ cityTextbox.addEventListener("keyup", (event) => {
 });
 
 const getWeather = async (country, city) => {
+  loadingBackground.className = "loadingBackground";
+  loader.className = "loader";
+
   const resp = await fetch(
-    `http://api.weatherstack.com/current?access_key=b51ed73230cd6ab71fb0d6128a60695c&query=${city},${country}`
+    `https://api.weatherapi.com/v1/current.json?key=9c97090dafcd4845a6670243230901&q=${city},${country}&aqi=no`
   );
+
+  loadingBackground.className = "hideLoadingBackground";
+  loader.className = "hideLoader";
 
   if (resp.status >= 400 && resp.status <= 599) {
     temperature.textContent = "No data available!";
@@ -199,7 +207,7 @@ const getWeather = async (country, city) => {
   }
 
   const data = await resp.json();
-  const { current } = data;
+  const { current, location } = data;
 
   if (weatherImage?.lastElementChild?.tagName)
     weatherImage.removeChild(weatherImage.lastElementChild);
@@ -210,13 +218,12 @@ const getWeather = async (country, city) => {
     }
   });
 
-  temperature.innerHTML = `Temperature: ${current.temperature} <sup>°C</sup>`;
-  weatherName.textContent = current.weather_descriptions[0];
+  temperature.innerHTML = `Temperature: ${Math.round(
+    current.temp_c
+  )} <sup>°C</sup>`;
+  weatherName.textContent = current.condition.text;
 
-  const weather = current.weather_descriptions[0]
-    .split(" ")
-    .join("")
-    .toLowerCase();
+  const weather = current.condition.text.split(" ").join("").toLowerCase();
 
   if (["overcast", "cloudy"].includes(weather)) {
     weatherImage.insertAdjacentHTML(
@@ -227,7 +234,7 @@ const getWeather = async (country, city) => {
             alt="weather image"
           />`
     );
-  } else if (["smoge", "haze", "mist", "smoke"].includes(weather)) {
+  } else if (["smoge", "haze", "mist", "smoke", "fog"].includes(weather)) {
     weatherImage.insertAdjacentHTML(
       "afterbegin",
       `<img
@@ -254,38 +261,32 @@ const getWeather = async (country, city) => {
             alt="weather image"
           />`
     );
-  } else if (
-    ["rain", "thunderstorm", "lightrain", "patchyrainpossible"].includes(
-      weather
-    )
-  ) {
+  } else if (["rain", "thunderstorm", "lightrain", "patchyrainpossible"].includes(weather)) {
     weatherImage.insertAdjacentHTML(
       "afterbegin",
       `<img src="./images/rainy.gif" class="weatherMainImg" alt="weather image" />`
     );
-  } else if (
-    ["snow", "lightsnow", "heavysnow", "freezingfog"].includes(weather)
-  ) {
+  } else if (["snow", "lightsnow", "heavysnow", "freezingfog", "Blowing snow"].includes(weather)) {
     weatherImage.insertAdjacentHTML(
       "afterbegin",
       `<img src="./images/snow.gif" class="weatherMainImg" alt="weather image" />`
     );
   }
 
-  placeName.textContent = `${country}, ${city}`;
+  placeName.textContent = `${location.country}, ${location.name}`;
 
   windSpeed.insertAdjacentHTML(
     "beforeend",
-    `<span>Wind Speed: ${current.wind_speed} km/h</span>`
+    `<span>Wind Speed: ${Math.round(current.wind_kph)} km/h</span>`
   );
 
   humidity.insertAdjacentHTML(
     "beforeend",
-    `<span>Humidity: ${current.humidity}%</span>`
+    `<span>Humidity: ${Math.round(current.humidity)}%</span>`
   );
 
   feelsLike.insertAdjacentHTML(
     "beforeend",
-    `<span>Feels Like: ${current.feelslike} <sup>°C</sup></span>`
+    `<span>Feels Like: ${Math.round(current.feelslike_c)} <sup>°C</sup></span>`
   );
 };
