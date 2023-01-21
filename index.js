@@ -1,9 +1,8 @@
 "use strict";
-// weatherAPI = `https://api.weatherstack.com/current?access_key=YOUR_ACCESS_KEY&query=New York`;
-// weatherAPI_key = "b51ed73230cd6ab71fb0d6128a60695c";
+// weather_API`https://api.weatherapi.com/v1/current.json?key=KEY&q=CITY,COUNTRY&aqi=no`
 // countries_API = "https://restcountries.com/v3.1/all";
 // citiesName_API = "https://countriesnow.space/api/v0.1/countries/cities";
-// reverseGeoCodeKey = plwPIIjrvMVbWGLM9rwRqK7YHoS5WvAt
+
 const body = document.querySelector("body");
 const countryTextbox = document.querySelector(".searchCountries");
 const countryDropDown = document.querySelector("#countryDropDown");
@@ -99,11 +98,11 @@ countryDropDown.addEventListener("click", async (event) => {
     }
   );
 
-  if (resp.status >= 400 && resp.status <= 599) {
-    while (cityDropDown.firstChild) {
-      cityDropDown.removeChild(cityDropDown.firstChild);
-    }
+  while (cityDropDown.firstChild) {
+    cityDropDown.removeChild(cityDropDown.firstChild);
+  }
 
+  if (resp.status >= 400 && resp.status <= 599) {
     cityDropDown.insertAdjacentHTML(
       "afterbegin",
       `<p class='cityLI'>No city is available!</p>`
